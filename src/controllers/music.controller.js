@@ -43,38 +43,68 @@ async function createMusic(req,res){
     // }
 }
 
-async function createAlbum(req,res){
-    // const token = req.cookies.token;
-    // if(!token){
-    //     return res.status(401).json({message: "Unauthorized"})
-    // }
-    // try {
-    //     const decoded = jsonwebtoken.verify(token, process.env.JWT_SECRET);
-    //     if(decoded.role !== 'artist'){
-    //         return res.status(403).json({message: "You don't have permission to perform this action"})
-    //     }
-        const {title, musics} = req.body;
-        const album = await albumModel.create({
-            title,
-            musics: musics,
-            artist: req.user.id
-        })
+// async function createAlbum(req,res){
+//     // const token = req.cookies.token;
+//     // if(!token){
+//     //     return res.status(401).json({message: "Unauthorized"})
+//     // }
+//     // try {
+//     //     const decoded = jsonwebtoken.verify(token, process.env.JWT_SECRET);
+//     //     if(decoded.role !== 'artist'){
+//     //         return res.status(403).json({message: "You don't have permission to perform this action"})
+//     //     }
+//         const {title, musics} = req.body;
+//         const album = await albumModel.create({
+//             title,
+//             musics: musics,
+//             artist: req.user.id
+//         })
 
-        res.status(201).json({
-            message: "Album created successfully",
-            album: {
-                id: album._id,
-                title: album.title,
-                musics: album.musics,
-                artist: album.artist
-            }
-        })
-    // } catch (error) {
-    //     console.log('====================================');
-    //     console.log(error);
-    //     console.log('====================================');
-    //     res.status(401).json({message: "Unauthorized"})
-    // }
+//         res.status(201).json({
+//             message: "Album created successfully",
+//             album: {
+//                 id: album._id,
+//                 title: album.title,
+//                 musics: album.musics,
+//                 artist: album.artist
+//             }
+//         })
+//     // } catch (error) {
+//     //     console.log('====================================');
+//     //     console.log(error);
+//     //     console.log('====================================');
+//     //     res.status(401).json({message: "Unauthorized"})
+//     // }
+// }
+
+async function createAlbum(req,res){
+    const { title } = req.body;
+    const files = req.files;
+
+    const musicIds = [];
+
+    for (let file of files) {
+        const result = await uploadFile(file.buffer.toString('base64'));
+
+        const music = await musicModel.create({
+            uri: result.url,
+            title: file.originalname,
+            artist: req.user.id
+        });
+
+        musicIds.push(music._id);
+    }
+
+    const album = await albumModel.create({
+        title,
+        musics: musicIds,
+        artist: req.user.id
+    });
+
+    res.status(201).json({
+        message: "Album created successfully",
+        album
+    });
 }
 
 async function getAllMusics(req,res){
@@ -110,6 +140,32 @@ async function getAlbumById(req,res){
 
     
 }
+
+async function getMyMusics(req,res){
+
+    const musics = await musicModel
+        .find({ artist: req.user.id })
+        .populate("artist","username email");
+
+    res.status(200).json({
+        message: "My musics fetched successfully",
+        musics
+    });
+}
+
+async function getMyAlbums(req,res){
+
+    const albums = await albumModel
+        .find({ artist: req.user.id })
+        .populate("artist","username email");
+
+    res.status(200).json({
+        message: "My albums fetched successfully",
+        albums
+    });
+}
+
+
 module.exports = {
-    createMusic,createAlbum,getAllMusics,getAllAlbums,getAlbumById
+    createMusic,createAlbum,getAllMusics,getAllAlbums,getAlbumById,getMyMusics,getMyAlbums
 }

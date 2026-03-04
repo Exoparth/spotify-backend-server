@@ -6,8 +6,16 @@ const multer = require('multer');
 const upload = multer({storage: multer.memoryStorage()});
 const router = express.Router();
 router.post('/upload',authMiddleware.authArtist ,upload.single('music'), musicController.createMusic)
-router.post('/album', authMiddleware.authArtist, musicController.createAlbum)
+// router.post('/album', authMiddleware.authArtist, musicController.createAlbum)
+router.post(
+  '/album',
+  authMiddleware.authArtist,
+  upload.array('musics'),
+  musicController.createAlbum
+)
 router.get('/', authMiddleware.authUser, musicController.getAllMusics)
 router.get('/albums', authMiddleware.authUser, musicController.getAllAlbums)
-router.get('/album/:albumId', authMiddleware.authUser, musicController.getAlbumById)
+router.get('/album/:albumId', authMiddleware.authAny, musicController.getAlbumById)
+router.get('/my-musics', authMiddleware.authArtist, musicController.getMyMusics)
+router.get('/my-albums', authMiddleware.authArtist, musicController.getMyAlbums)
 module.exports = router;
